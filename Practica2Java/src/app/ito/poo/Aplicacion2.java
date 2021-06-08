@@ -1,16 +1,15 @@
 package app.ito.poo;
-
 import java.awt.HeadlessException;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDate;
-import Clases.ito.poo.CuentaBancaria;
-import Clases.ito.poo.CuentasdeBanco;
-import Escritor.eArchivo;
-import Escritor.lArchvo;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import Clases.ito.poo.CuentaBancaria;
+import Clases.ito.poo.CuentasdeBanco;
+import Escritor.eObjeto;
+import Escritor.lObjeto;
 import excepcion.ito.poo.CuentaExistente;
 import excepcion.ito.poo.BorrarCuenta;
 import excepcion.ito.poo.Deposito;
@@ -18,14 +17,14 @@ import excepcion.ito.poo.NumeCuenta;
 import excepcion.ito.poo.Retiro;
 import excepcion.ito.poo.Saldo;
 
-public class Aplicacion {
-
+public class Aplicacion2 {
+	
 	static CuentasdeBanco c;
 	static CuentaBancaria e;
-	static eArchivo archivo;
-	static lArchvo archivo2;
-	
-	static void menu() throws NumeCuenta, Saldo, Retiro, Deposito, HeadlessException, CuentaExistente, BorrarCuenta, FileNotFoundException {
+	static eObjeto outputFile;
+	static lObjeto inputFile=null;
+
+	static void menu() throws NumeCuenta, Saldo, Retiro, Deposito, HeadlessException, CuentaExistente, BorrarCuenta {
 		Comenzar();
 		IniciarP();
 		final JPanel panel=new JPanel();
@@ -45,7 +44,7 @@ public class Aplicacion {
 		case 4:hacerRetiro();break;
 		case 5:borrarCuenta();break;
 		case 6:consulta();break;
-		case 7:grabarRegistro();ciclo=false;error=false;break;
+		case 7:ciclo=false;error=false;break;
 		default:JOptionPane.showMessageDialog(null,"Ingrese aquí la opción deseada");
 		  }
 		}
@@ -63,8 +62,8 @@ public class Aplicacion {
 			JOptionPane.showMessageDialog(panel,e.getMessage(),"ERROR", JOptionPane.ERROR_MESSAGE);
 		}
 		}
+		guardaCuentas ();
 	}
-	
 	static CuentaBancaria capturarCuenta() throws NumeCuenta,Saldo {
 		CuentaBancaria n=new CuentaBancaria();
 		long l;String fecha,nombre;float saldo;
@@ -78,11 +77,9 @@ public class Aplicacion {
 		n.setFechaApertura(LocalDate.parse(fecha));
 		return n;
 	}
-	
 	static void Comenzar() {
 		c=new CuentasdeBanco();
 	}
-	
 	static void agregarCuenta() throws NumeCuenta, Saldo, HeadlessException, CuentaExistente {
 		CuentaBancaria nueva;
 		nueva=capturarCuenta();
@@ -104,7 +101,6 @@ public class Aplicacion {
 		JOptionPane.showMessageDialog(null,cuentas);
 		}
 	}
-	
 	static void hacerDeposito() throws Saldo, Deposito {
 		int pos=0;
 		float cantidad=0;
@@ -161,7 +157,6 @@ public class Aplicacion {
 			}
 		}
 	}
-	
 	static void borrarCuenta() throws BorrarCuenta {
 		int pos=0;
 		if(c.isFree())
@@ -291,64 +286,52 @@ public class Aplicacion {
 			JOptionPane.showMessageDialog(null,"Esta(s) será(n) la(s) cuenta(s) con saldo menor:\n"+cuentas);
 		}
 	}
-
-	static void grabarRegistro() throws FileNotFoundException {
-		if (c.isFree()) {
+	static void guardaCuentas() {
+		if(c.isFree()) {
 			
 		}
 		else {
-			archivo=new eArchivo("guardacuentas");
-			for(int i=0;i<c.getSize();i++) {
-				archivo.writeLong(c.getItem(i).getNumCuenta());
-				archivo.writeString(c.getItem(i).getNomCliente());
-				archivo.writeFloat(c.getItem(i).getSaldo());
-				if(c.getItem(i).getFechaActualizacion()==null) {
-					archivo.writeString(c.getItem(i).getFechaApertura().toString());
-					archivo.writeStringLn("null");	
-				}
-				else {
-					archivo.writeString(c.getItem(i).getFechaApertura().toString());
-					archivo.writeStringLn(c.getItem(i).getFechaActualizacion().toString());	
-				}
+			try {
+				outputFile = new eObjeto("datosconCuentas");
+			    for(int i=0;i<c.getSize();i++)
+			    	outputFile.writeObject(c.getItem(i));
+			    outputFile.close();
+			}catch(Exception e) {
 				
 			}
-			archivo.close();
 		}
-					
 	}
 	
-	static void IniciarP() throws FileNotFoundException, NumeCuenta, CuentaExistente {
+	static void IniciarP() throws CuentaExistente{
 		boolean hay=false;
 		try {
-			archivo2= new lArchvo("guardacuentas");
-			hay=true;
-		}catch(FileNotFoundException e) {
-			System.err.println("Cuenta existente, creando nueva");
+			inputFile = new lObjeto("datosconCuentas");    
+		    hay=true;  
+		}catch(IOException e) {
+			System.err.println("Sin registros, se creara uno");
 		}
 		if(hay)
-			LTexto();
-		
+			grabarelRegistro();
 	}
 	
-static void LTexto() throws NumeCuenta, CuentaExistente {
-		
-		while(!archivo2.isEOF()) {
-			e=new CuentaBancaria();
-			e.setNumeCuenta(archivo2.readLong());
-			e.setNomCliente(archivo2.readString());
-			e.setSaldoActualizado(archivo2.readFloat());
-			e.setFechaApertura(LocalDate.parse(archivo2.readString()));
-			String fechaAct;
-			fechaAct=archivo2.readString();
-			if(fechaAct.equals("null")) 
-				e.setFechaActualizacion(null);
-			else
-				e.setFechaActualizacion(LocalDate.parse(fechaAct));
-			c.addItem(e);
-			archivo2.isFinLinea();
-		
+	static void grabarelRegistro() throws CuentaExistente {
+		try {
+		      inputFile = new lObjeto("datosconCuentas");
+		      while(true) {
+			      c.addItem((CuentaBancaria)inputFile.readObject());
+		      }
+		}catch(IOException e) {
+			
+			try {
+				inputFile.close();
+				System.out.println("Cuentas en sistema");
+			} catch (IOException e1) {
+				
+			}
+		}
+		catch(ClassNotFoundException e) {
 			
 		}
 	}
-
+	
 }

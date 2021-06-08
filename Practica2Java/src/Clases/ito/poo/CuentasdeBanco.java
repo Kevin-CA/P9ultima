@@ -32,7 +32,7 @@ public class CuentasdeBanco implements Arreglo<CuentaBancaria> {
 	}
 	
 	public void CuentaExistente(CuentaBancaria item) throws CuentaExistente{
-		if(this.existeItem(item)) {
+		if(this.hayItem(item)) {
 			throw new CuentaExistente("Esa cuenta ya está registrada en nuestro sistema");
 		}
 	}
@@ -53,8 +53,9 @@ public class CuentasdeBanco implements Arreglo<CuentaBancaria> {
 	}
 	
 	@Override
-	public boolean addItem(CuentaBancaria item) {
+	public boolean addItem(CuentaBancaria item) throws CuentaExistente {
 		boolean add=false;
+		
 		if(this.isFull()) 
 			crecerArreglo();
 		int j=0;
@@ -73,15 +74,15 @@ public class CuentasdeBanco implements Arreglo<CuentaBancaria> {
 	}
 
 	@Override
-	public boolean existeItem(CuentaBancaria item) {
-		boolean existe=false;
+	public boolean hayItem(CuentaBancaria item) {
+		boolean hay=false;
 		for(int i=0;i<=this.ultimo;i++)
 			if(item.compareTo(this.cuentas[i])==0) {
-				existe=true;
+				hay=true;
 				break;
 			}
 					
-		return existe;
+		return hay;
 	}
 	
 	
@@ -102,7 +103,7 @@ public class CuentasdeBanco implements Arreglo<CuentaBancaria> {
 	@Override
 	public boolean clear(CuentaBancaria item) {
 		boolean borrar=false;
-		if(this.existeItem(item)) {
+		if(this.hayItem(item)) {
 			int i=0;
 			for(;i<=this.ultimo;i++)
 				if(item.compareTo(this.cuentas[i])==0)
